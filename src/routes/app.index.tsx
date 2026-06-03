@@ -2,9 +2,11 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 
 export const Route = createFileRoute("/app/")({
-  component: () => {
+  component: function AppIndex() {
     const router = useRouter();
-    useEffect(() => { router.navigate({ to: "/app/dashboard" }); }, [router]);
+    useEffect(() => {
+      router.navigate({ to: "/app/dashboard" });
+    }, [router]);
     return null;
   },
 });

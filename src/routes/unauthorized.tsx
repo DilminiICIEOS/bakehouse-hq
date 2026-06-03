@@ -13,10 +13,12 @@ function Page() {
         </div>
         <h1 className="text-2xl font-semibold tracking-tight">Access restricted</h1>
         <p className="text-sm text-muted-foreground">
-          Your role doesn't have permission to view this page. Please contact your administrator
-          if you believe this is a mistake.
+          Your role doesn't have permission to view this page. Please contact your administrator if
+          you believe this is a mistake.
         </p>
-        <Button asChild><Link to="/app/dashboard">Back to dashboard</Link></Button>
+        <Button asChild>
+          <Link to="/app/dashboard">Back to dashboard</Link>
+        </Button>
       </div>
     </div>
   );

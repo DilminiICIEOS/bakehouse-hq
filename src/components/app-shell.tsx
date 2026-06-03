@@ -1,30 +1,86 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import {
-  LayoutDashboard, ShoppingCart, Trash2, Boxes, BarChart3,
-  Users, Settings, LogOut, Menu, Croissant, X,
+  LayoutDashboard,
+  ShoppingCart,
+  Trash2,
+  Boxes,
+  BarChart3,
+  Users,
+  Settings,
+  LogOut,
+  Menu,
+  Croissant,
+  X,
+  CreditCard,
 } from "lucide-react";
 import { useAuth, ROLE_LABEL } from "@/lib/auth";
 import type { Role } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-interface NavItem { to: string; label: string; icon: typeof LayoutDashboard; roles: Role[] }
+interface NavItem {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  roles: Role[];
+}
 
 const NAV: NavItem[] = [
-  { to: "/app/dashboard", label: "Dashboard",       icon: LayoutDashboard, roles: ["admin","manager","salesperson"] },
-  { to: "/app/sales",     label: "Sales Entry",     icon: ShoppingCart,    roles: ["admin","manager","salesperson"] },
-  { to: "/app/wastage",   label: "Wastage",         icon: Trash2,          roles: ["admin","manager","salesperson"] },
-  { to: "/app/stock",     label: "Stock Counting",  icon: Boxes,           roles: ["admin","manager","salesperson"] },
-  { to: "/app/reports",   label: "Reports",         icon: BarChart3,       roles: ["admin","manager"] },
-  { to: "/app/users",     label: "User Management", icon: Users,           roles: ["admin"] },
-  { to: "/app/settings",  label: "Settings",        icon: Settings,        roles: ["admin","manager","salesperson"] },
+  {
+    to: "/app/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    roles: ["admin", "manager", "salesperson"],
+  },
+  {
+    to: "/app/sales",
+    label: "Sales Entry",
+    icon: ShoppingCart,
+    roles: ["admin", "manager", "salesperson"],
+  },
+  {
+    to: "/app/orders",
+    label: "Orders",
+    icon: ShoppingCart,
+    roles: ["admin", "manager", "salesperson"],
+  },
+  {
+    to: "/app/wastage",
+    label: "Wastage",
+    icon: Trash2,
+    roles: ["admin", "manager", "salesperson"],
+  },
+  {
+    to: "/app/payments",
+    label: "Payments",
+    icon: CreditCard,
+    roles: ["admin", "manager", "salesperson"],
+  },
+  {
+    to: "/app/stock",
+    label: "Stock Counting",
+    icon: Boxes,
+    roles: ["admin", "manager", "salesperson"],
+  },
+  { to: "/app/reports", label: "Reports", icon: BarChart3, roles: ["admin", "manager"] },
+  { to: "/app/users", label: "User Management", icon: Users, roles: ["admin"] },
+  {
+    to: "/app/settings",
+    label: "Settings",
+    icon: Settings,
+    roles: ["admin", "manager", "salesperson"],
+  },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -35,10 +91,21 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (!user) return null;
 
   const items = NAV.filter((n) => n.roles.includes(user.role));
-  const handleLogout = () => { logout(); router.navigate({ to: "/login" }); };
+  const handleLogout = () => {
+    logout();
+    router.navigate({ to: "/login" });
+  };
 
-  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-  const initials = user.name.split(" ").map(p => p[0]).slice(0, 2).join("");
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  const initials = user.name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("");
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -52,10 +119,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-foreground/40" onClick={() => setMobileOpen(false)} />
           <aside className="relative w-64 bg-sidebar flex flex-col">
-            <button className="absolute top-3 right-3 p-1" onClick={() => setMobileOpen(false)} aria-label="Close navigation menu">
+            <button
+              className="absolute top-3 right-3 p-1"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close navigation menu"
+            >
               <X className="h-5 w-5" />
             </button>
-            <SidebarContent items={items} pathname={pathname} onNavigate={() => setMobileOpen(false)} />
+            <SidebarContent
+              items={items}
+              pathname={pathname}
+              onNavigate={() => setMobileOpen(false)}
+            />
           </aside>
         </div>
       )}
@@ -63,7 +138,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top nav */}
         <header className="sticky top-0 z-30 h-16 border-b bg-background/80 backdrop-blur flex items-center px-4 sm:px-6 gap-3">
-          <button className="lg:hidden p-2 -ml-2" onClick={() => setMobileOpen(true)} aria-label="Open navigation menu">
+          <button
+            className="lg:hidden p-2 -ml-2"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open navigation menu"
+          >
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex flex-col">
@@ -74,7 +153,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="ml-auto flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-muted transition" aria-label="User menu">
+                <button
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-lg hover:bg-muted transition"
+                  aria-label="User menu"
+                >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                       {initials}
@@ -82,7 +164,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </Avatar>
                   <div className="hidden sm:flex flex-col items-start">
                     <span className="text-sm font-medium leading-tight">{user.name}</span>
-                    <span className="text-[11px] text-muted-foreground leading-tight">{ROLE_LABEL[user.role]}</span>
+                    <span className="text-[11px] text-muted-foreground leading-tight">
+                      {ROLE_LABEL[user.role]}
+                    </span>
                   </div>
                 </button>
               </DropdownMenuTrigger>
@@ -95,7 +179,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <DropdownMenuItem onClick={() => router.navigate({ to: "/app/settings" })}>
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-destructive focus:text-destructive"
+                >
                   <LogOut className="h-4 w-4 mr-2" /> Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -103,17 +190,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-          {children}
-        </main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-400 w-full mx-auto">{children}</main>
       </div>
     </div>
   );
 }
 
 function SidebarContent({
-  items, pathname, onNavigate,
-}: { items: NavItem[]; pathname: string; onNavigate?: () => void }) {
+  items,
+  pathname,
+  onNavigate,
+}: {
+  items: NavItem[];
+  pathname: string;
+  onNavigate?: () => void;
+}) {
   const { user } = useAuth();
   return (
     <>
@@ -155,9 +246,7 @@ function SidebarContent({
               {user ? ROLE_LABEL[user.role] : ""}
             </Badge>
           </div>
-          <p className="text-muted-foreground leading-snug">
-            MVP build — single outlet operations
-          </p>
+          <p className="text-muted-foreground leading-snug">MVP build — single outlet operations</p>
         </div>
       </div>
     </>

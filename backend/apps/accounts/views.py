@@ -2,6 +2,8 @@
 Authentication views and endpoints.
 """
 
+import logging
+
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -15,9 +17,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.accounts.models import User
 from apps.accounts.serializers import (
     BakeryTokenObtainPairSerializer,
+    CustomerRegistrationSerializer,
     MeSerializer,
     UserSerializer,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class BakeryTokenObtainPairView(TokenObtainPairView):
@@ -35,10 +40,25 @@ class BakeryTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         """Override to wrap auth responses and return consistent error codes."""
+        from pathlib import Path
+        debug_path = Path(__file__).resolve().parent.parent / 'logs' / 'login_debug.txt'
+        try:
+            debug_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(debug_path, 'a', encoding='utf-8') as f:
+                f.write('--- LOGIN REQUEST ---\n')
+                f.write(f'content_type={request.content_type}\n')
+                f.write(f'body={request.body!r}\n')
+                f.write(f'data={request.data!r}\n')
+                f.write('\n')
+        except Exception:
+            pass
+        print('DEBUG LOGIN request data:', request.data)
+        logger.debug('Login request data: %s', request.data)
         serializer = self.get_serializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as exc:
+            logger.debug('Login failed validation: %s', exc.detail)
             return Response(
                 {
                     'success': False,
@@ -140,6 +160,28 @@ def current_user_view(request):
             'data': serializer.data,
         },
         status=status.HTTP_200_OK,
+    )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register_view(request):
+    """
+    Register a new customer account.
+
+    POST /api/auth/register/
+    """
+    serializer = CustomerRegistrationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save()
+
+    return Response(
+        {
+            'success': True,
+            'message': 'Registration successful.',
+            'data': UserSerializer(user).data,
+        },
+        status=status.HTTP_201_CREATED,
     )
 
 

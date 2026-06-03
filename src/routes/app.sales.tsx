@@ -11,22 +11,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-import { currency, type Product } from "@/lib/mock-data";
-import { api } from "@/lib/api";
+import { currency } from "@/lib/mock-data";
+import { api, type Product, type ProductBatch } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/app/sales")({ component: SalesPage });
 
-interface LineItem { id: string; productId: string; qty: number; unitPrice: number; }
+interface LineItem {
+  id: string;
+  productId: string;
+  batchId: string;
+  qty: number;
+  unitPrice: number;
+}
 
 const lineSchema = z.object({
   productId: z.string().min(1),
+  batchId: z.string().min(1),
   qty: z.number().int().positive(),
   unitPrice: z.number().nonnegative(),
 });
@@ -34,31 +50,58 @@ const lineSchema = z.object({
 function SalesPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const { data: products = [], isLoading: productsLoading, isError: productsError } =
-    useQuery<Product[], Error>({ queryKey: ["products"], queryFn: () => api.listProducts() });
+  const {
+    data: products = [],
+    isLoading: productsLoading,
+    isError: productsError,
+  } = useQuery<Product[], Error>({ queryKey: ["products"], queryFn: () => api.listProducts() });
 
   const [items, setItems] = useState<LineItem[]>([]);
   const [productId, setProductId] = useState("");
+  const [batchId, setBatchId] = useState("");
   const [qty, setQty] = useState(1);
-  const product = products.find((p: any) => p.id === productId);
+  const product = products.find((p: any) => String(p.id) === productId);
+  const { data: allBatches = [], isLoading: batchesLoading } = useQuery<ProductBatch[], Error>({
+    queryKey: ["batches", productId],
+    queryFn: () => api.listBatches({ product: productId }),
+    enabled: Boolean(productId),
+  });
+  const batches = productId
+    ? allBatches.filter((batch) => String(batch.product) === productId)
+    : [];
   const grandTotal = items.reduce((s, i) => s + i.qty * i.unitPrice, 0);
   const tax = Math.round(grandTotal * 0.05);
 
   const addItem = () => {
-    const parsed = lineSchema.safeParse({ productId, qty, unitPrice: Number((product as any)?.price ?? 0) });
-    if (!parsed.success) { toast.error("Select a product and a valid quantity"); return; }
+    const parsed = lineSchema.safeParse({
+      productId,
+      batchId,
+      qty,
+      unitPrice: Number((product as any)?.price ?? 0),
+    });
+    if (!parsed.success) {
+      toast.error("Select a product, batch and a valid quantity");
+      return;
+    }
     setItems((prev) => [...prev, { id: crypto.randomUUID(), ...parsed.data }]);
-    setProductId(""); setQty(1);
+    setProductId("");
+    setBatchId("");
+    setQty(1);
   };
 
-  const removeItem = (id: string) => setItems((p) => p.filter(i => i.id !== id));
+  const removeItem = (id: string) => setItems((p) => p.filter((i) => i.id !== id));
 
   const save = useMutation({
     mutationFn: async () => {
       if (items.length === 0) throw new Error("Add at least one item.");
       return api.createSale({
         date: new Date().toISOString().slice(0, 10),
-        items: items.map(i => ({ productId: i.productId, qty: i.qty, unitPrice: i.unitPrice })),
+        items: items.map((i) => ({
+          productId: i.productId,
+          batchId: i.batchId,
+          qty: i.qty,
+          unitPrice: i.unitPrice,
+        })),
         payment_method: "cash",
         tax_amount: tax,
         discount_amount: 0,
@@ -76,7 +119,10 @@ function SalesPage() {
 
   return (
     <>
-      <PageHeader title="Sales entry" description="Record a new sale fast. Keyboard-friendly and optimized for the cashier." />
+      <PageHeader
+        title="Sales entry"
+        description="Record a new sale fast. Keyboard-friendly and optimized for the cashier."
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
         <div className="space-y-4">
@@ -84,31 +130,80 @@ function SalesPage() {
             <div className="grid grid-cols-1 md:grid-cols-[1fr_140px_140px_auto] gap-3 md:items-end">
               <div className="space-y-1.5">
                 <Label>Product</Label>
-                <Select value={productId} onValueChange={setProductId}>
-                  <SelectTrigger><SelectValue placeholder="Select a bakery item…" /></SelectTrigger>
+                <Select
+                  value={productId}
+                  onValueChange={(value) => {
+                    setProductId(value);
+                    setBatchId("");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a bakery item…" />
+                  </SelectTrigger>
                   <SelectContent>
                     {productsLoading && (
-                      <SelectItem value="__loading__">Loading…</SelectItem>
+                      <SelectItem value="__loading__" disabled>
+                        Loading…
+                      </SelectItem>
                     )}
-                    {products?.filter(p => p?.id).map((p: any) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name} <span className="text-muted-foreground">· {currency(p.price)}</span>
+                    {products
+                      ?.filter((p) => p?.id)
+                      .map((p: any) => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name}{" "}
+                          <span className="text-muted-foreground">· {currency(p.price)}</span>
+                        </SelectItem>
+                      ))}
+                    {productsError && (
+                      <SelectItem value="__error__" disabled>
+                        Failed to load
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Batch</Label>
+                <Select value={batchId} onValueChange={setBatchId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a batch…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {batchesLoading && (
+                      <SelectItem value="__loading__" disabled>
+                        Loading…
+                      </SelectItem>
+                    )}
+                    {batches?.length === 0 && productId && !batchesLoading && (
+                      <SelectItem value="__no_batches__" disabled>
+                        No batches available
+                      </SelectItem>
+                    )}
+                    {batches?.map((batch) => (
+                      <SelectItem key={batch.id} value={batch.id}>
+                        {batch.batch_number} · {batch.current_quantity} available
                       </SelectItem>
                     ))}
-                    {productsError && <SelectItem value="__error__">Failed to load</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label>Quantity</Label>
-                <Input type="number" min={1} value={qty}
-                  onChange={(e) => setQty(Math.max(1, Number(e.target.value || 1)))} />
+                <Input
+                  type="number"
+                  min={1}
+                  value={qty}
+                  onChange={(e) => setQty(Math.max(1, Number(e.target.value || 1)))}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Unit price</Label>
                 <Input value={product ? currency(product.price) : "—"} disabled />
               </div>
-              <Button onClick={addItem} className="h-10"><Plus className="h-4 w-4 mr-1" />Add</Button>
+              <Button onClick={addItem} className="h-10">
+                <Plus className="h-4 w-4 mr-1" />
+                Add
+              </Button>
             </div>
           </Card>
 
@@ -117,6 +212,7 @@ function SalesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
+                  <TableHead>Batch</TableHead>
                   <TableHead className="text-right">Qty</TableHead>
                   <TableHead className="text-right">Unit price</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -126,19 +222,27 @@ function SalesPage() {
               <TableBody>
                 {items.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={5}
+                      className="text-center py-12 text-sm text-muted-foreground"
+                    >
                       No items yet. Add products above to start a sale.
                     </TableCell>
                   </TableRow>
                 )}
-                {items.map(i => {
-                  const p = products.find((pp: any) => pp.id === i.productId);
+                {items.map((i) => {
+                  const p = products.find((pp: any) => String(pp.id) === i.productId);
                   return (
                     <TableRow key={i.id}>
                       <TableCell className="font-medium">{p?.name}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {allBatches.find((b) => String(b.id) === i.batchId)?.batch_number ?? "—"}
+                      </TableCell>
                       <TableCell className="text-right">{i.qty}</TableCell>
                       <TableCell className="text-right">{currency(i.unitPrice)}</TableCell>
-                      <TableCell className="text-right font-semibold">{currency(i.qty * i.unitPrice)}</TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {currency(i.qty * i.unitPrice)}
+                      </TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" onClick={() => removeItem(i.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />

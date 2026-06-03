@@ -35,6 +35,13 @@ class Wastage(AuditModel):
         on_delete=models.PROTECT,
         related_name='wastages',
     )
+    batch = models.ForeignKey(
+        'products.ProductBatch',
+        on_delete=models.PROTECT,
+        related_name='wastages',
+        null=True,
+        blank=True,
+    )
     
     # Wastage details
     quantity = models.IntegerField(

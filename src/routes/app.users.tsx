@@ -14,20 +14,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ProtectedRoute } from "@/components/protected-route";
 import { type Role, type User } from "@/lib/mock-data";
@@ -35,27 +59,44 @@ import { api } from "@/lib/api";
 import { ROLE_LABEL } from "@/lib/auth";
 
 export const Route = createFileRoute("/app/users")({
-  component: () => <ProtectedRoute roles={["admin"]}><UsersPage /></ProtectedRoute>,
+  component: () => (
+    <ProtectedRoute roles={["admin"]}>
+      <UsersPage />
+    </ProtectedRoute>
+  ),
 });
 
 const schema = z.object({
   name: z.string().trim().min(2, "Min 2 chars").max(80),
   email: z.string().trim().email().max(255),
-  role: z.enum(["admin", "manager", "salesperson"]),
+  role: z.enum(["admin", "manager", "salesperson", "factory_distributor", "customer"]),
 });
 type FormVals = z.infer<typeof schema>;
 
 function UsersPage() {
   const qc = useQueryClient();
-  const { data: users = [], isLoading } = useQuery({ queryKey: ["users"], queryFn: api.listUsers });
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => api.listUsers(),
+  });
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } =
-    useForm<FormVals>({ resolver: zodResolver(schema), defaultValues: { role: "salesperson" } });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<FormVals>({ resolver: zodResolver(schema), defaultValues: { role: "salesperson" } });
 
-  const openCreate = () => { setEditing(null); reset({ name: "", email: "", role: "salesperson" }); setOpen(true); };
+  const openCreate = () => {
+    setEditing(null);
+    reset({ name: "", email: "", role: "salesperson" });
+    setOpen(true);
+  };
   const openEdit = (u: User) => {
     setEditing(u);
     reset({ name: u.name, email: u.email, role: u.role });
@@ -75,7 +116,8 @@ function UsersPage() {
   });
 
   const updateUserMut = useMutation({
-    mutationFn: ({ id, payload }: { id: string | number; payload: FormVals }) => api.updateUser(id, payload),
+    mutationFn: ({ id, payload }: { id: string | number; payload: FormVals }) =>
+      api.updateUser(id, payload),
     onSuccess: () => {
       toast.success("User updated");
       qc.invalidateQueries({ queryKey: ["users"] });
@@ -123,8 +165,8 @@ function UsersPage() {
     resetPasswordMut.mutate(u.id);
   };
 
-  const filtered = (users as User[]).filter(u =>
-    `${u.name} ${u.email} ${u.role}`.toLowerCase().includes(query.toLowerCase())
+  const filtered = (users as User[]).filter((u) =>
+    `${u.name} ${u.email} ${u.role}`.toLowerCase().includes(query.toLowerCase()),
   );
 
   return (
@@ -132,16 +174,28 @@ function UsersPage() {
       <PageHeader
         title="User management"
         description="Create accounts, assign roles, and manage access for your outlet team."
-        actions={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />New user</Button>}
+        actions={
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            New user
+          </Button>
+        }
       />
 
       <Card className="rounded-xl p-4">
         <div className="flex justify-between items-center mb-4 gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search users…" className="pl-9" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search users…"
+              className="pl-9"
+            />
           </div>
-          <div className="text-xs text-muted-foreground">{filtered.length} of {users.length}</div>
+          <div className="text-xs text-muted-foreground">
+            {filtered.length} of {users.length}
+          </div>
         </div>
         <Table>
           <TableHeader>
@@ -155,7 +209,7 @@ function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map(u => (
+            {filtered.map((u) => (
               <TableRow key={u.id}>
                 <TableCell className="font-medium">{u.name}</TableCell>
                 <TableCell className="text-muted-foreground">{u.email}</TableCell>
@@ -165,22 +219,30 @@ function UsersPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className={
-                    u.status === "active"
-                      ? "bg-chart-4/15 text-chart-4 border-0"
-                      : "bg-muted text-muted-foreground border-0"
-                  }>{u.status === "active" ? "Active" : "Disabled"}</Badge>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      u.status === "active"
+                        ? "bg-chart-4/15 text-chart-4 border-0"
+                        : "bg-muted text-muted-foreground border-0"
+                    }
+                  >
+                    {u.status === "active" ? "Active" : "Disabled"}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{u.lastLogin}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => openEdit(u)}>Edit</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => resetPassword(u)}>
-                        <KeyRound className="h-4 w-4 mr-2" />Reset password
+                        <KeyRound className="h-4 w-4 mr-2" />
+                        Reset password
                       </DropdownMenuItem>
                       <DisableItem user={u} onConfirm={() => toggleStatus(u)} />
                     </DropdownMenuContent>
@@ -194,7 +256,9 @@ function UsersPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit user" : "Create user"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit user" : "Create user"}</DialogTitle>
+          </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             <div className="space-y-1.5">
               <Label>Name</Label>
@@ -209,17 +273,25 @@ function UsersPage() {
             <div className="space-y-1.5">
               <Label>Role</Label>
               <Select value={watch("role")} onValueChange={(v) => setValue("role", v as Role)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
                   <SelectItem value="salesperson">Salesperson</SelectItem>
+                  <SelectItem value="factory_distributor">Factory Distributor</SelectItem>
+                  <SelectItem value="customer">Customer</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={createUserMut.isPending || updateUserMut.isPending}>{editing ? "Save" : "Create"}</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createUserMut.isPending || updateUserMut.isPending}>
+                {editing ? "Save" : "Create"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -232,7 +304,10 @@ function DisableItem({ user, onConfirm }: { user: User; onConfirm: () => void })
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+        <DropdownMenuItem
+          onSelect={(e) => e.preventDefault()}
+          className="text-destructive focus:text-destructive"
+        >
           {user.status === "active" ? "Disable account" : "Enable account"}
         </DropdownMenuItem>
       </AlertDialogTrigger>

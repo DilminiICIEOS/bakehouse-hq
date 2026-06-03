@@ -308,6 +308,10 @@ LOGGING = {
     },
 }
 
+if DEBUG:
+    LOGGING['loggers']['django']['handlers'] = ['console']
+    LOGGING['loggers']['apps']['handlers'] = ['console']
+
 # Create logs directory
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 

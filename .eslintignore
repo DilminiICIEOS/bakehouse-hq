@@ -1,0 +1,11 @@
+node_modules/
+dist/
+backend/venv/
+backend/.venv/
+backend/venv/**
+backend/.venv/**
+backend/node_modules/
+.env
+.vscode
+*.log
+**/site-packages/**

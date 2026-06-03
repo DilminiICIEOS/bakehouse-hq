@@ -26,9 +26,17 @@ function LoginPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => { if (user) router.navigate({ to: "/app/dashboard" }); }, [user, router]);
+  useEffect(() => {
+    if (user) router.navigate({ to: "/app/dashboard" });
+  }, [user, router]);
 
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<Form>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: { email: "manager@bakery.com", password: "demo1234", remember: true },
   });
@@ -41,7 +49,9 @@ function LoginPage() {
       router.navigate({ to: "/app/dashboard" });
     } catch (e) {
       toast.error((e as Error).message);
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -60,8 +70,8 @@ function LoginPage() {
             Run your bakery with calm clarity.
           </h1>
           <p className="text-primary-foreground/80 text-base leading-relaxed">
-            Track every sale, every loaf, every loss. A modern operations and analytics
-            platform built for the bakery floor.
+            Track every sale, every loaf, every loss. A modern operations and analytics platform
+            built for the bakery floor.
           </p>
           <div className="grid grid-cols-3 gap-3 pt-6">
             {[
@@ -69,7 +79,10 @@ function LoginPage() {
               { k: "382", v: "Items sold" },
               { k: "2.1%", v: "Wastage" },
             ].map((s) => (
-              <div key={s.v} className="rounded-xl bg-white/10 backdrop-blur p-4 border border-white/10">
+              <div
+                key={s.v}
+                className="rounded-xl bg-white/10 backdrop-blur p-4 border border-white/10"
+              >
                 <div className="text-2xl font-semibold">{s.k}</div>
                 <div className="text-xs text-primary-foreground/70 mt-1">{s.v}</div>
               </div>
@@ -88,7 +101,7 @@ function LoginPage() {
             <div className="h-9 w-9 rounded-lg bg-primary grid place-items-center text-primary-foreground">
               <Croissant className="h-5 w-5" />
             </div>
-            <span className="font-semibold">Sunrise Bakery OS</span>
+            <span className="font-semibold">BakeryHUB</span>
           </div>
 
           <h2 className="text-2xl font-semibold tracking-tight">Sign in</h2>
@@ -103,14 +116,28 @@ function LoginPage() {
               {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                  Forgot password?
-                </Link>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  {...register("password")}
+                />
+                {errors.password && (
+                  <p className="text-xs text-destructive">{errors.password.message}</p>
+                )}
+                <div className="text-right">
+                  <Link to="/register" className="text-xs text-primary hover:underline">
+                    Create an account
+                  </Link>
+                </div>
               </div>
-              <Input id="password" type="password" autoComplete="current-password" {...register("password")} />
-              {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
 
             <div className="flex items-center gap-2">
@@ -128,10 +155,7 @@ function LoginPage() {
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
             </Button>
 
-            <div className="rounded-lg bg-muted px-3 py-2.5 text-xs text-muted-foreground space-y-1">
-              <p className="font-medium text-foreground">Demo accounts (password: demo1234)</p>
-              <p>admin@bakery.com · manager@bakery.com · sales@bakery.com</p>
-            </div>
+            <div className="rounded-lg bg-muted px-3 py-2.5 text-xs text-muted-foreground space-y-1"></div>
           </form>
         </Card>
       </div>

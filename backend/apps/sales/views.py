@@ -11,13 +11,17 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Q, Sum, Count
 from django.utils import timezone
 
-from apps.sales.models import Sale, SaleItem
+from apps.sales.models import Sale, SaleItem, Order, Payment
 from apps.sales.serializers import (
     SaleSerializer,
     SaleCreateSerializer,
     SaleVoidSerializer,
+    OrderSerializer,
+    OrderCreateSerializer,
+    PaymentSerializer,
+    PaymentCreateSerializer,
 )
-from apps.core.permissions import IsSalesperson
+from apps.core.permissions import IsSalespersonOrManager
 
 
 class SaleViewSet(viewsets.ModelViewSet):
@@ -25,11 +29,11 @@ class SaleViewSet(viewsets.ModelViewSet):
     ViewSet for sales management.
     
     GET /api/sales/ - List all sales
-    POST /api/sales/ - Create new sale (salesperson+)
+    POST /api/sales/ - Create new sale (salesperson or manager)
     GET /api/sales/{id}/ - Get sale details
     """
     queryset = Sale.objects.select_related('cashier').prefetch_related('items').order_by('-date')
-    permission_classes = [IsAuthenticated, IsSalesperson]
+    permission_classes = [IsAuthenticated, IsSalespersonOrManager]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['date', 'cashier', 'payment_method', 'is_void']
     search_fields = ['reference_number', 'notes']
@@ -171,4 +175,84 @@ class SaleViewSet(viewsets.ModelViewSet):
                 'data': summary,
             },
             status=status.HTTP_200_OK,
+        )
+
+
+class OrderViewSet(viewsets.ModelViewSet):
+    """ViewSet for customer order management."""
+
+    queryset = Order.objects.select_related('customer', 'outlet').prefetch_related('items', 'payments').order_by('-created_at')
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['status', 'payment_status', 'customer', 'outlet']
+    search_fields = ['order_number', 'customer__email', 'notes']
+    ordering_fields = ['created_at', 'total']
+    ordering = ['-created_at']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return OrderCreateSerializer
+        return OrderSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.request.user.is_customer:
+            return queryset.filter(customer=self.request.user)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        if request.user.is_customer:
+            data['customer'] = request.user.pk
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Order created successfully',
+                'data': OrderSerializer(order).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    """ViewSet for order payment records."""
+
+    queryset = Payment.objects.select_related('order', 'order__customer').order_by('-created_at')
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['order', 'method', 'status']
+    search_fields = ['order__order_number', 'order__customer__email', 'transaction_reference']
+    ordering_fields = ['created_at', 'amount']
+    ordering = ['-created_at']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return PaymentCreateSerializer
+        return PaymentSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        if self.request.user.is_customer:
+            return queryset.filter(order__customer=self.request.user)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payment = serializer.save()
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Payment recorded successfully',
+                'data': PaymentSerializer(payment).data,
+            },
+            status=status.HTTP_201_CREATED,
         )

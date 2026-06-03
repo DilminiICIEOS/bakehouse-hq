@@ -1,6 +1,6 @@
 /**
  * Updated Authentication Library
- * 
+ *
  * Replace src/lib/auth.tsx with this implementation
  * that connects to the Django backend
  */
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           refresh,
           user,
           exp,
-        })
+        }),
       );
 
       // Set default auth header
@@ -132,11 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(user);
       setToken(access);
       return user;
-    } catch (err: any) {
-      const message =
-        err.response?.data?.error?.message ||
-        err.response?.data?.detail ||
-        "Login failed";
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error?.message || err.response?.data?.detail || err.message
+        : err instanceof Error
+          ? err.message
+          : "Login failed";
       setError(message);
       throw new Error(message);
     }
@@ -197,7 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         return Promise.reject(error);
-      }
+      },
     );
 
     return () => axios.interceptors.response.eject(interceptor);
@@ -230,4 +231,6 @@ export const ROLE_LABEL: Record<Role, string> = {
   admin: "Admin",
   manager: "Manager",
   salesperson: "Salesperson",
+  factory_distributor: "Factory Distributor",
+  customer: "Customer",
 };

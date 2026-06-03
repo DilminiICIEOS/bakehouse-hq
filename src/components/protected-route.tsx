@@ -4,9 +4,7 @@ import { useAuth } from "@/lib/auth";
 import type { Role } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function ProtectedRoute({
-  children, roles,
-}: { children: React.ReactNode; roles?: Role[] }) {
+export function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: Role[] }) {
   const { user, loading } = useAuth();
   const router = useRouter();
 

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import axios from "axios";
+import { apiClient } from "./api-backend";
 import type { User, Role } from "./mock-data";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
@@ -40,8 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (parsed.exp > Date.now()) {
             setUser(parsed.user);
             setToken(parsed.access);
-            // Set default auth header
+            // Set default auth header for both instances
             axios.defaults.headers.common["Authorization"] = `Bearer ${parsed.access}`;
+            apiClient.defaults.headers.common["Authorization"] = `Bearer ${parsed.access}`;
           } else {
             // Try to refresh token
             try {
@@ -50,13 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUser(parsed.user);
                 setToken(newToken);
                 axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+                apiClient.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
                 localStorage.setItem(
                   STORAGE_KEY,
                   JSON.stringify({
                     ...parsed,
                     access: newToken,
                     exp: Date.now() + 8 * 60 * 60 * 1000,
-                  })
+                  }),
                 );
               } else {
                 localStorage.removeItem(STORAGE_KEY);
@@ -122,20 +125,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           refresh,
           user,
           exp,
-        })
+        }),
       );
 
       // Set default auth header
       axios.defaults.headers.common["Authorization"] = `Bearer ${access}`;
+      apiClient.defaults.headers.common["Authorization"] = `Bearer ${access}`;
 
       setUser(user);
       setToken(access);
       return user;
-    } catch (err: any) {
-      const message =
-        err.response?.data?.error?.message ||
-        err.response?.data?.detail ||
-        "Login failed";
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.error?.message || err.response?.data?.detail || err.message
+        : err instanceof Error
+          ? err.message
+          : "Login failed";
       setError(message);
       throw new Error(message);
     }
@@ -155,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear local state regardless
       localStorage.removeItem(STORAGE_KEY);
       delete axios.defaults.headers.common["Authorization"];
+      delete apiClient.defaults.headers.common["Authorization"];
       setUser(null);
       setToken(null);
       setError(null);
@@ -183,6 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
     return newToken;
   };
 
@@ -201,17 +208,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
             return axios(originalRequest);
           } catch (e) {
-            // Refresh failed, logout user
             await logout();
             return Promise.reject(error);
           }
         }
 
         return Promise.reject(error);
-      }
+      },
     );
 
-    return () => axios.interceptors.response.eject(interceptor);
+    const apiClientInterceptor = apiClient.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+
+          try {
+            const newToken = await refreshToken();
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return apiClient(originalRequest);
+          } catch (e) {
+            await logout();
+            return Promise.reject(error);
+          }
+        }
+
+        return Promise.reject(error);
+      },
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+      apiClient.interceptors.response.eject(apiClientInterceptor);
+    };
   }, [token]);
 
   return (
@@ -241,4 +272,6 @@ export const ROLE_LABEL: Record<Role, string> = {
   admin: "Admin",
   manager: "Manager",
   salesperson: "Salesperson",
+  factory_distributor: "Factory Distributor",
+  customer: "Customer",
 };

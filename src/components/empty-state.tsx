@@ -3,8 +3,16 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function EmptyState({
-  icon: Icon, title, description, action,
-}: { icon?: LucideIcon; title: string; description?: string; action?: ReactNode }) {
+  icon: Icon,
+  title,
+  description,
+  action,
+}: {
+  icon?: LucideIcon;
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
   return (
     <Card className="rounded-xl p-10 flex flex-col items-center text-center gap-3">
       {Icon && (

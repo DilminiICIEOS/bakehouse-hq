@@ -3,7 +3,7 @@ Admin configuration for products app.
 """
 
 from django.contrib import admin
-from apps.products.models import Product, ProductCategory, StockAdjustment
+from apps.products.models import Product, ProductCategory, StockAdjustment, ProductBatch
 
 
 @admin.register(ProductCategory)
@@ -15,7 +15,7 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'price', 'stock', 'min_stock', 'status', 'is_active']
+    list_display = ['name', 'category', 'price', 'cost_price', 'unit', 'stock', 'min_stock', 'max_stock_limit', 'status', 'is_active']
     list_filter = ['category', 'is_active', 'created_at']
     search_fields = ['name', 'sku', 'barcode']
     ordering = ['category', 'name']
@@ -25,7 +25,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('name', 'category', 'description', 'sku', 'barcode', 'image_url')
         }),
         ('Pricing & Inventory', {
-            'fields': ('price', 'stock', 'min_stock', 'total_sold', 'total_wasted')
+            'fields': ('cost_price', 'price', 'unit', 'stock', 'min_stock', 'max_stock_limit', 'total_sold', 'total_wasted')
         }),
         ('Status', {
             'fields': ('is_active', 'last_stock_check'),
@@ -34,6 +34,15 @@ class ProductAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ['total_sold', 'total_wasted', 'last_stock_check', 'created_at', 'updated_at']
+
+
+@admin.register(ProductBatch)
+class ProductBatchAdmin(admin.ModelAdmin):
+    list_display = ['product', 'batch_number', 'current_quantity', 'quantity_produced', 'outlet_assignment', 'is_active', 'production_date', 'expiry_date']
+    list_filter = ['product', 'outlet_assignment', 'is_active', 'production_date', 'expiry_date']
+    search_fields = ['product__name', 'batch_number', 'outlet_assignment']
+    ordering = ['product', 'production_date', 'batch_number']
+    readonly_fields = ['created_at', 'updated_at']
 
 
 @admin.register(StockAdjustment)

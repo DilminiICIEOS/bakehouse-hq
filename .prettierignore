@@ -6,3 +6,13 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+backend/venv/
+backend/.venv/
+backend/venv/**
+backend/.venv/**
+backend/node_modules/
+**/site-packages/**
+__pycache__/
+.venv/
+.env
+.vscode

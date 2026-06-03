@@ -16,8 +16,11 @@ const schema = z.object({ email: z.string().trim().email("Enter a valid email").
 
 function Page() {
   const [sent, setSent] = useState(false);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } =
-    useForm<{ email: string }>({ resolver: zodResolver(schema) });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<{ email: string }>({ resolver: zodResolver(schema) });
 
   const onSubmit = async () => {
     await new Promise((r) => setTimeout(r, 500));
@@ -61,7 +64,10 @@ function Page() {
               <Button type="submit" className="w-full h-11" disabled={isSubmitting}>
                 Send reset link
               </Button>
-              <Link to="/login" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+              <Link
+                to="/login"
+                className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+              >
                 <ArrowLeft className="h-4 w-4 mr-1" /> Back to sign in
               </Link>
             </form>

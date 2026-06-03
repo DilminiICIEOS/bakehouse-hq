@@ -3,7 +3,11 @@ import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 export function ChartCard({
-  title, description, action, children, className,
+  title,
+  description,
+  action,
+  children,
+  className,
 }: {
   title: string;
   description?: string;

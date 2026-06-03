@@ -49,6 +49,8 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
         ('admin', 'Administrator'),
         ('manager', 'Manager'),
         ('salesperson', 'Salesperson'),
+        ('factory_distributor', 'Factory Distributor'),
+        ('customer', 'Customer'),
     ]
     
     STATUS_CHOICES = [
@@ -116,13 +118,45 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     def __str__(self):
         return f"{self.name} ({self.email})"
 
+    ROLE_GROUP_MAPPING = {
+        'admin': 'Admin',
+        'manager': 'Manager',
+        'salesperson': 'Salesperson',
+        'factory_distributor': 'Factory Distributor',
+        'customer': 'Customer',
+    }
+
+    @classmethod
+    def group_name_for_role(cls, role):
+        return cls.ROLE_GROUP_MAPPING.get(role)
+
+    def sync_groups(self):
+        """Ensure the user is assigned to the correct role group."""
+        try:
+            from django.contrib.auth.models import Group
+
+            group_name = self.group_name_for_role(self.role)
+            if not group_name:
+                return
+
+            current_group, _ = Group.objects.get_or_create(name=group_name)
+            self.groups.add(current_group)
+
+            for other_group_name in self.ROLE_GROUP_MAPPING.values():
+                if other_group_name != group_name:
+                    other_group, _ = Group.objects.get_or_create(name=other_group_name)
+                    self.groups.remove(other_group)
+        except Exception:
+            pass
+
     def save(self, *args, **kwargs):
-        """Save and sync status with is_active."""
+        """Save and sync status with is_active and group membership."""
         if self.status == 'disabled':
             self.is_active = False
         elif self.status == 'active':
             self.is_active = True
         super().save(*args, **kwargs)
+        self.sync_groups()
 
     def update_last_login_display(self):
         """Update the display-friendly last_login field."""
@@ -145,7 +179,17 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     @property
     def is_salesperson(self):
         """Check if user is salesperson."""
-        return self.role == 'salesperson' or self.is_manager
+        return self.role == 'salesperson' or self.is_admin
+
+    @property
+    def is_factory_distributor(self):
+        """Check if user is factory distributor."""
+        return self.role == 'factory_distributor' or self.is_admin
+
+    @property
+    def is_customer(self):
+        """Check if user is a customer."""
+        return self.role == 'customer'
 
     def can_edit_user(self, target_user):
         """Check if user can edit another user."""
@@ -163,8 +207,8 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
 
     def can_create_sale(self):
         """Check if user can create sales."""
-        return self.is_salesperson and self.is_active
+        return self.role == 'salesperson' or self.is_admin
 
     def can_record_wastage(self):
         """Check if user can record wastage."""
-        return self.is_salesperson and self.is_active
+        return self.role == 'salesperson' or self.is_admin

@@ -12,6 +12,7 @@ class WastageSerializer(serializers.ModelSerializer):
     """Serializer for wastage representation."""
     
     product_name = serializers.CharField(source='product.name', read_only=True)
+    batch_number = serializers.CharField(source='batch.batch_number', read_only=True)
     recorded_by_name = serializers.CharField(source='recorded_by.name', read_only=True)
     approved_by_name = serializers.CharField(source='approved_by.name', read_only=True)
     product_details = ProductSerializer(source='product', read_only=True)
@@ -20,10 +21,10 @@ class WastageSerializer(serializers.ModelSerializer):
         model = Wastage
         fields = [
             'id', 'date', 'reference_number', 'product', 'product_name',
-            'product_details', 'quantity', 'reason', 'unit_cost', 'loss',
-            'recorded_by', 'recorded_by_name', 'notes',
-            'is_approved', 'approved_by', 'approved_by_name', 'approved_at',
-            'created_at', 'updated_at',
+            'batch', 'batch_number', 'product_details', 'quantity',
+            'reason', 'unit_cost', 'loss', 'recorded_by',
+            'recorded_by_name', 'notes', 'is_approved', 'approved_by',
+            'approved_by_name', 'approved_at', 'created_at', 'updated_at',
         ]
         read_only_fields = [
             'id', 'reference_number', 'loss', 'created_at', 'updated_at',
@@ -36,7 +37,7 @@ class WastageCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wastage
         fields = [
-            'date', 'product', 'quantity', 'reason',
+            'date', 'product', 'batch', 'quantity', 'reason',
             'unit_cost', 'notes',
         ]
 
@@ -54,11 +55,21 @@ class WastageCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """Validate the entire object."""
-        # Check product exists
         product = attrs.get('product')
+        batch = attrs.get('batch')
+        quantity = attrs.get('quantity')
+
         if not product or not product.is_active:
             raise serializers.ValidationError('Invalid or inactive product.')
-        
+
+        if batch:
+            if batch.product != product:
+                raise serializers.ValidationError('Selected batch does not belong to the chosen product.')
+            if quantity and batch.current_quantity < quantity:
+                raise serializers.ValidationError(
+                    f'Batch {batch.batch_number} has insufficient quantity. Available: {batch.current_quantity}.'
+                )
+
         return attrs
 
     def create(self, validated_data):
@@ -72,21 +83,26 @@ class WastageCreateSerializer(serializers.ModelSerializer):
         unit_cost = validated_data.get('unit_cost', 0)
         validated_data['loss'] = Decimal(quantity) * Decimal(unit_cost)
         
+        batch = validated_data.get('batch')
+        product = validated_data['product']
+
         # Create wastage record
         wastage = Wastage.objects.create(**validated_data)
         
         # Adjust stock
-        product = validated_data['product']
-        product.stock -= quantity
+        old_stock = product.stock
+        if batch:
+            batch.current_quantity -= quantity
+            batch.save()
         product.total_wasted += quantity
-        product.save()
+        product.update_stock_from_batches()
         
         # Log adjustment
         StockAdjustment.objects.create(
             product=product,
             quantity=-quantity,
             reason='wastage',
-            old_stock=product.stock + quantity,
+            old_stock=old_stock,
             new_stock=product.stock,
             wastage=wastage,
             adjusted_by=self.context['request'].user,

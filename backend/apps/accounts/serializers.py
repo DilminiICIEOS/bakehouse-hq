@@ -10,15 +10,20 @@ from apps.accounts.models import User
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for user representation."""
-    
+    permissions = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
             'id', 'email', 'name', 'role', 'status',
             'avatar', 'phone', 'department',
             'is_active', 'created_at', 'last_login_display',
+            'permissions',
         ]
-        read_only_fields = ['id', 'created_at', 'last_login_display']
+        read_only_fields = ['id', 'created_at', 'last_login_display', 'permissions']
+
+    def get_permissions(self, obj):
+        return sorted(obj.get_all_permissions())
 
 
 class UserCreateUpdateSerializer(serializers.ModelSerializer):
@@ -78,6 +83,29 @@ class UserCreateUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class CustomerRegistrationSerializer(UserCreateUpdateSerializer):
+    """Serializer for customer registration."""
+
+    class Meta(UserCreateUpdateSerializer.Meta):
+        fields = [
+            'email', 'name', 'password', 'password_confirm', 'phone',
+        ]
+        extra_kwargs = {
+            'email': {'required': True},
+            'name': {'required': True},
+        }
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        attrs['role'] = 'customer'
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('password_confirm', None)
+        validated_data['role'] = 'customer'
+        return User.objects.create_user(**validated_data)
+
+
 class BakeryTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Custom token serializer with additional user info."""
     
@@ -110,6 +138,7 @@ class BakeryTokenObtainPairSerializer(TokenObtainPairSerializer):
             'access': str(refresh.access_token),
             'refresh': str(refresh),
             'user': UserSerializer(user).data,
+            'permissions': sorted(user.get_all_permissions()),
         }
 
         return data

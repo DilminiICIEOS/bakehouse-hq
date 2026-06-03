@@ -11,7 +11,11 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
@@ -42,8 +46,9 @@ function SettingsPage() {
     onSuccess: () => {
       toast.success("Settings saved successfully");
     },
-    onError: (e: any) => {
-      toast.error(e?.message || "Failed to save settings");
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || "Failed to save settings");
     },
   });
 
@@ -64,16 +69,22 @@ function SettingsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Currency</Label>
-              <Select value={currency} onValueChange={(v) => {
-                setCurrency(v);
-                try { localStorage.setItem("bakery_currency", v); } catch (e) { /* ignore */ }
-              }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={currency}
+                onValueChange={(v) => {
+                  setCurrency(v);
+                  try {
+                    localStorage.setItem("bakery_currency", v);
+                  } catch (e) {
+                    /* ignore */
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="LKR">LKR — Sri Lankan Rupee (LKR)</SelectItem>
-                  <SelectItem value="INR">INR — Indian Rupee (₹)</SelectItem>
-                  <SelectItem value="USD">USD — US Dollar ($)</SelectItem>
-                  <SelectItem value="EUR">EUR — Euro (€)</SelectItem>
+                  <SelectItem value="LKR">LKR — Sri Lankan Rupee (Rs.)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -89,10 +100,13 @@ function SettingsPage() {
                 <div className="text-sm font-medium">Dark mode</div>
                 <div className="text-xs text-muted-foreground">Use a warmer dark theme</div>
               </div>
-              <Switch checked={theme} onCheckedChange={(c) => {
-                setTheme(c);
-                document.documentElement.classList.toggle("dark", c);
-              }} />
+              <Switch
+                checked={theme}
+                onCheckedChange={(c) => {
+                  setTheme(c);
+                  document.documentElement.classList.toggle("dark", c);
+                }}
+              />
             </div>
           </div>
           <div className="flex justify-end">
@@ -117,13 +131,25 @@ function SettingsPage() {
             <div className="text-muted-foreground text-xs">Role</div>
             <div className="font-medium capitalize">{user?.role}</div>
           </div>
-          <Button variant="outline" className="w-full" onClick={async () => {
-            try {
-              if (!user?.id) { toast.error("No user available"); return; }
-              await api.resetUserPassword(user.id);
-              toast.success("Password reset email sent");
-            } catch (e: any) { toast.error(e?.message || "Failed to send reset email"); }
-          }}>Change password</Button>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={async () => {
+              try {
+                if (!user?.id) {
+                  toast.error("No user available");
+                  return;
+                }
+                await api.resetUserPassword(user.id);
+                toast.success("Password reset email sent");
+              } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : String(e);
+                toast.error(msg || "Failed to send reset email");
+              }
+            }}
+          >
+            Change password
+          </Button>
         </Card>
       </div>
     </>

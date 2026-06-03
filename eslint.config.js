@@ -6,7 +6,21 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  { ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      "node_modules",
+      "**/node_modules",
+      "backend/venv",
+      "backend/.venv",
+      "backend/venv/**",
+      "backend/.venv/**",
+      "backend/node_modules",
+      "**/site-packages/**",
+      ".venv",
+      ".vscode",
+    ] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -20,6 +34,9 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react-refresh/only-export-components": "off",
+      "react-hooks/exhaustive-deps": "warn",
       "no-restricted-imports": [
         "error",
         {
@@ -32,7 +49,6 @@ export default tseslint.config(
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
     },
   },

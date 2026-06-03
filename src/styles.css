@@ -52,8 +52,8 @@
   --radius: 0.75rem;
 
   /* Bakery warm SaaS palette */
-  --background: oklch(0.985 0.012 80);          /* cream #FFF8F0 */
-  --foreground: oklch(0.22 0.025 50);           /* dark charcoal */
+  --background: oklch(0.985 0.012 80); /* cream #FFF8F0 */
+  --foreground: oklch(0.22 0.025 50); /* dark charcoal */
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.025 50);
@@ -61,16 +61,16 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.025 50);
 
-  --primary: oklch(0.48 0.075 50);              /* warm brown #8B5E3C */
+  --primary: oklch(0.48 0.075 50); /* warm brown #8B5E3C */
   --primary-foreground: oklch(0.985 0.012 80);
 
-  --secondary: oklch(0.95 0.02 75);             /* soft cream */
+  --secondary: oklch(0.95 0.02 75); /* soft cream */
   --secondary-foreground: oklch(0.3 0.04 50);
 
   --muted: oklch(0.955 0.015 75);
   --muted-foreground: oklch(0.5 0.03 55);
 
-  --accent: oklch(0.78 0.09 75);                /* amber #D4A373 */
+  --accent: oklch(0.78 0.09 75); /* amber #D4A373 */
   --accent-foreground: oklch(0.22 0.025 50);
 
   --destructive: oklch(0.58 0.21 27);
@@ -80,11 +80,11 @@
   --input: oklch(0.9 0.02 70);
   --ring: oklch(0.48 0.075 50);
 
-  --chart-1: oklch(0.48 0.075 50);              /* brown */
-  --chart-2: oklch(0.78 0.09 75);               /* amber */
-  --chart-3: oklch(0.65 0.13 40);               /* terracotta */
-  --chart-4: oklch(0.55 0.08 140);              /* sage */
-  --chart-5: oklch(0.7 0.12 25);                /* sienna */
+  --chart-1: oklch(0.48 0.075 50); /* brown */
+  --chart-2: oklch(0.78 0.09 75); /* amber */
+  --chart-3: oklch(0.65 0.13 40); /* terracotta */
+  --chart-4: oklch(0.55 0.08 140); /* sage */
+  --chart-5: oklch(0.7 0.12 25); /* sienna */
 
   --sidebar: oklch(0.99 0.008 80);
   --sidebar-foreground: oklch(0.25 0.03 50);
@@ -135,7 +135,8 @@
   * {
     border-color: var(--color-border);
   }
-  html, body {
+  html,
+  body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
@@ -147,11 +148,20 @@
 
 @layer utilities {
   .login-gradient {
-    background-image: linear-gradient(to bottom right, var(--primary), var(--primary) 45%, oklch(0.38 0.07 45));
+    background-image: linear-gradient(
+      to bottom right,
+      var(--primary),
+      var(--primary) 45%,
+      oklch(0.38 0.07 45)
+    );
   }
 
   .login-bg-dots {
-    background-image: radial-gradient(circle at 20% 20%, white 1px, transparent 1px), radial-gradient(circle at 80% 60%, white 1px, transparent 1px);
-    background-size: 40px 40px, 60px 60px;
+    background-image:
+      radial-gradient(circle at 20% 20%, white 1px, transparent 1px),
+      radial-gradient(circle at 80% 60%, white 1px, transparent 1px);
+    background-size:
+      40px 40px,
+      60px 60px;
   }
 }

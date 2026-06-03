@@ -11,9 +11,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bakery_hq.settings')
 # Setup Django
 django.setup()
 
-# Pytest plugins
-pytest_plugins = ['pytest_django']
-
 # Configure pytest-django
 def pytest_configure():
     """Configure pytest with Django."""
