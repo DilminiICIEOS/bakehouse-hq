@@ -13,6 +13,7 @@ import {
   Croissant,
   X,
   CreditCard,
+  Layers,
 } from "lucide-react";
 import { useAuth, ROLE_LABEL } from "@/lib/auth";
 import type { Role } from "@/lib/mock-data";
@@ -41,7 +42,7 @@ const NAV: NavItem[] = [
     to: "/app/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
-    roles: ["admin", "manager", "salesperson"],
+    roles: ["admin", "manager", "salesperson", "factory_manager", "factory_distributor"],
   },
   {
     to: "/app/sales",
@@ -53,7 +54,13 @@ const NAV: NavItem[] = [
     to: "/app/orders",
     label: "Orders",
     icon: ShoppingCart,
-    roles: ["admin", "manager", "salesperson"],
+    roles: ["admin", "manager", "salesperson", "factory_manager", "factory_distributor"],
+  },
+  {
+    to: "/app/products",
+    label: "Products & Batches",
+    icon: Layers,
+    roles: ["admin", "manager", "factory_manager", "factory_distributor"],
   },
   {
     to: "/app/wastage",
@@ -90,7 +97,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   if (!user) return null;
 
-  const items = NAV.filter((n) => n.roles.includes(user.role));
+  const items = NAV.filter((n) => n.roles.includes(user.role as any));
   const handleLogout = () => {
     logout();
     router.navigate({ to: "/login" });
@@ -146,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex flex-col">
-            <span className="text-sm font-medium">Sunrise Bakery — Colombo Outlet</span>
+            <span className="text-sm font-medium">BakeryHUB — Colombo Outlet</span>
             <time className="text-xs text-muted-foreground">{today}</time>
           </div>
 
@@ -165,7 +172,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <div className="hidden sm:flex flex-col items-start">
                     <span className="text-sm font-medium leading-tight">{user.name}</span>
                     <span className="text-[11px] text-muted-foreground leading-tight">
-                      {ROLE_LABEL[user.role]}
+                      {ROLE_LABEL[user.role] || user.role}
                     </span>
                   </div>
                 </button>
@@ -213,7 +220,7 @@ function SidebarContent({
           <Croissant className="h-5 w-5" />
         </div>
         <div>
-          <div className="font-semibold leading-tight">Sunrise</div>
+          <div className="font-semibold leading-tight">BakeryHUB</div>
           <div className="text-[11px] text-muted-foreground leading-tight">Bakery OS</div>
         </div>
       </div>
@@ -243,10 +250,10 @@ function SidebarContent({
         <div className="rounded-lg bg-sidebar-accent p-3 text-xs">
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-              {user ? ROLE_LABEL[user.role] : ""}
+              {user ? ROLE_LABEL[user.role] || user.role : ""}
             </Badge>
           </div>
-          <p className="text-muted-foreground leading-snug">MVP build — single outlet operations</p>
+          <p className="text-muted-foreground leading-snug">BakeryHUB Enterprise Live Platform</p>
         </div>
       </div>
     </>

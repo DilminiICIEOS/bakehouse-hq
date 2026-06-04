@@ -178,7 +178,7 @@ export const createSale = async (data: {
     date: data.date,
     items: data.items.map((item) => ({
       product: Number(item.productId),
-      batch: item.batchId && item.batchId !== "" ? Number(item.batchId) : null, // Sanitizes types for Django Serializers
+      batch: item.batchId && item.batchId !== "" ? Number(item.batchId) : null,
       quantity: item.qty,
       unit_price: item.unitPrice,
       discount_amount: item.discountAmount || 0,
@@ -235,7 +235,6 @@ export const listProducts = async (filters?: { category?: string }): Promise<Pro
   return parseResponseData(response);
 };
 
-// 🌟 ADDED MISSING EXPORT: createProduct
 export const createProduct = async (payload: any): Promise<Product> => {
   const response = await apiClient.post("/products/", payload);
   return response.data.data || response.data;
@@ -249,7 +248,6 @@ export const listBatches = async (filters?: { product?: string }): Promise<Produ
   return parseResponseData(response);
 };
 
-// 🌟 ADDED MISSING EXPORT: createBatch
 export const createBatch = async (payload: any): Promise<ProductBatch> => {
   const response = await apiClient.post("/products/batches/", payload);
   return response.data.data || response.data;
@@ -368,6 +366,20 @@ export const saveOutletSettings = async (settings: { outlet: string; currency: s
 };
 
 // ============================================================
+// PASSWORD RESET REMEDIATION API
+// ============================================================
+export const forgotPassword = async (email: string): Promise<any> => {
+  const response = await apiClient.post("/auth/forgot-password/", { email });
+  return response.data;
+};
+
+// 🌟 ADDED: Transmits cryptographic link parameters back down to the verification view
+export const resetPasswordConfirm = async (payload: Record<string, string>): Promise<any> => {
+  const response = await apiClient.post("/auth/reset-password-confirm/", payload);
+  return response.data;
+};
+
+// ============================================================
 // ORDERS / PAYMENTS / OUTLETS / DISPATCH API
 // ============================================================
 
@@ -428,7 +440,7 @@ export const createDispatch = async (payload: unknown) => {
   return response.data.data || response.data;
 };
 
-// 🌟 Default Export aggregation object updated with missing references
+// Default Export aggregation mapping wrapper
 export default {
   listSales,
   createSale,
@@ -446,6 +458,8 @@ export default {
   saveOutletSettings,
   resetUserPassword,
   registerCustomer,
+  forgotPassword, 
+  resetPasswordConfirm, // 🌟 Exported cleanly with safe double-slash comment styles
   listOrders,
   createOrder,
   getOrder,

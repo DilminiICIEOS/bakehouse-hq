@@ -1,6 +1,7 @@
 """
 Django settings for Bakery HQ project.
 Production-grade configuration with environment variables.
+file: backend/bakery_hq/settings.py
 """
 
 import os
@@ -71,8 +72,6 @@ CORS_ALLOW_METHODS = [
 ]
 
 # Development convenience: when DEBUG is enabled, allow all localhost origins
-# to avoid CORS issues during local development. In production, rely on
-# explicit `CORS_ALLOWED_ORIGINS` and regexes.
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOW_CREDENTIALS = True
@@ -309,16 +308,36 @@ LOGGING = {
 }
 
 if DEBUG:
-    LOGGING['loggers']['django']['handlers'] = ['console']
-    LOGGING['loggers']['apps']['handlers'] = ['console']
+    LOGGING['handlers']['console']['level'] = 'DEBUG'
 
 # Create logs directory
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 
 # Custom settings for the application
 APP_SETTINGS = {
-    'OUTLET_NAME': 'Sunrise Bakery — Colombo Outlet',
+    'OUTLET_NAME': 'BakeryHUB',
     'CURRENCY': 'LKR',
     'CURRENCY_SYMBOL': 'LKR',
 }
+
 AUTH_USER_MODEL = 'accounts.User'
+
+# 🌟 DYNAMIC PORTAL IDENTIFIER CONFIGURATION
+FRONTEND_URL = 'http://localhost:8080'
+
+# ============================================================
+# 📬 LIVE INTERNET EMAIL DISPATCH ENGINE (Gmail SMTP Integration)
+# ============================================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# 1. 🚨 Action Required: Replace this with your own functional Gmail username address
+EMAIL_HOST_USER = 'dilminiwithanawasam1250@gmail.com'
+
+# 2. 🚨 Action Required: Replace this placeholder string with your unique 16-character Google App Password 
+# (Go to your Google Account -> Security -> 2-Step Verification -> App Passwords to generate this)
+EMAIL_HOST_PASSWORD = 'fwdn cxap xzgl fvms'
+
+DEFAULT_FROM_EMAIL = f"BakeryHUB Enterprise Security <{EMAIL_HOST_USER}>"

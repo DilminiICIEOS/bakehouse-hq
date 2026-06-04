@@ -1,5 +1,7 @@
 """
-Custom permissions for role-based access control.
+Custom permissions for role-based access control (RBAC).
+Directly enforces security specifications outlined in SRS Section 2.3 and 5.3.
+file: backend/apps/core/permissions.py
 """
 
 from django.contrib.auth.models import Group
@@ -7,6 +9,7 @@ from rest_framework.permissions import BasePermission
 
 
 def has_group(user, group_name):
+    """Helper function to verify if a user belongs to a specific Django Group."""
     return bool(
         user and
         user.is_authenticated and
@@ -15,19 +18,23 @@ def has_group(user, group_name):
 
 
 class IsAdmin(BasePermission):
-    """Allow access only to admin users."""
+    """Allow access only to full system Admin accounts (SRS Section 2.3)."""
     message = 'Admin access required.'
 
     def has_permission(self, request, view):
         return bool(
             request.user and
             request.user.is_authenticated and
-            (request.user.is_superuser or request.user.role == 'admin' or has_group(request.user, 'Admin'))
+            (
+                request.user.is_superuser or 
+                getattr(request.user, 'role', None) == 'admin' or 
+                has_group(request.user, 'Admin')
+            )
         )
 
 
 class IsManager(BasePermission):
-    """Allow access to admin and manager users."""
+    """Allow access to business performance Managers and Admins (SRS Section 2.3)."""
     message = 'Manager or admin access required.'
 
     def has_permission(self, request, view):
@@ -36,15 +43,18 @@ class IsManager(BasePermission):
             request.user.is_authenticated and
             (
                 request.user.is_superuser or
-                request.user.role in ['admin', 'manager'] or
+                getattr(request.user, 'role', None) in ['admin', 'manager'] or
                 has_group(request.user, 'Manager')
             )
         )
 
 
 class IsFactoryDistributor(BasePermission):
-    """Allow access to factory distributors and admins."""
-    message = 'Factory Distributor access required.'
+    """
+    Allow access to Factory staff and Admins (SRS Section 2.3 & Feature 4.2).
+    🌟 Guarded: Supports both manager and distributor strings to prevent mismatch errors.
+    """
+    message = 'Factory Distributor or Factory Manager access required.'
 
     def has_permission(self, request, view):
         return bool(
@@ -52,14 +62,15 @@ class IsFactoryDistributor(BasePermission):
             request.user.is_authenticated and
             (
                 request.user.is_superuser or
-                request.user.role in ['admin', 'factory_distributor'] or
-                has_group(request.user, 'Factory Distributor')
+                getattr(request.user, 'role', None) in ['admin', 'factory_distributor', 'factory_manager'] or
+                has_group(request.user, 'Factory Distributor') or
+                has_group(request.user, 'Factory Manager')
             )
         )
 
 
 class IsSalesperson(BasePermission):
-    """Allow access to salespeople and admins."""
+    """Allow access to checkout counter Salespersons and Admins (SRS Section 2.3)."""
     message = 'Salesperson access required.'
 
     def has_permission(self, request, view):
@@ -68,14 +79,14 @@ class IsSalesperson(BasePermission):
             request.user.is_authenticated and
             (
                 request.user.is_superuser or
-                request.user.role == 'salesperson' or
+                getattr(request.user, 'role', None) == 'salesperson' or
                 has_group(request.user, 'Salesperson')
             )
         )
 
 
 class IsSalespersonOrManager(BasePermission):
-    """Allow access to salespeople, managers, and admins."""
+    """Allow access to front-counter operators, branch supervisors, and admins."""
     message = 'Salesperson or manager access required.'
 
     def has_permission(self, request, view):
@@ -84,7 +95,7 @@ class IsSalespersonOrManager(BasePermission):
             request.user.is_authenticated and
             (
                 request.user.is_superuser or
-                request.user.role in ['salesperson', 'manager'] or
+                getattr(request.user, 'role', None) in ['salesperson', 'manager', 'admin'] or
                 has_group(request.user, 'Salesperson') or
                 has_group(request.user, 'Manager')
             )
@@ -92,7 +103,7 @@ class IsSalespersonOrManager(BasePermission):
 
 
 class IsCustomer(BasePermission):
-    """Allow access to customers."""
+    """Allow access to registered online customers browsing the storefront (SRS Section 2.3)."""
     message = 'Customer access required.'
 
     def has_permission(self, request, view):
@@ -100,24 +111,24 @@ class IsCustomer(BasePermission):
             request.user and
             request.user.is_authenticated and
             (
-                request.user.role == 'customer' or
+                getattr(request.user, 'role', None) == 'customer' or
                 has_group(request.user, 'Customer')
             )
         )
 
 
 class IsAdminOrReadOnly(BasePermission):
-    """Allow admin full access, others read-only."""
+    """Allow admin full read/write access, while giving others read-only viewing profiles."""
 
     def has_permission(self, request, view):
         if request.method in ['GET', 'HEAD', 'OPTIONS']:
-            return request.user and request.user.is_authenticated
+            return bool(request.user and request.user.is_authenticated)
         return bool(
             request.user and
             request.user.is_authenticated and
             (
                 request.user.is_superuser or
-                request.user.role == 'admin' or
+                getattr(request.user, 'role', None) == 'admin' or
                 has_group(request.user, 'Admin')
             )
         )
