@@ -95,7 +95,7 @@ function ProductsManagementPage() {
         price: Number(prodPrice),
         category: editingProductItem ? editingProductItem.category : 1, // Retain existing or assign default fallback
         shelf_life_days: Number(shelfLife),
-        stock: editingProductItem ? editingProductItem.stock : 0,
+        stock: editingProductItem ? editingProductItem.stock : 100,
         min_stock: editingProductItem ? editingProductItem.min_stock : 10,
         is_active: true,
       };

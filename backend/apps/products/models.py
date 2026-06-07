@@ -41,7 +41,7 @@ class Product(TimeStampedModel):
     measurement_type = models.CharField(max_length=50, default="units")
     max_stock_limit = models.IntegerField(default=100, validators=[MinValueValidator(0)])
     
-    stock = models.IntegerField(default=0, validators=[MinValueValidator(0)], db_index=True)
+    stock = models.IntegerField(default=100, validators=[MinValueValidator(0)], db_index=True)
     min_stock = models.IntegerField(default=10, validators=[MinValueValidator(0)])
     sku = models.CharField(max_length=50, unique=True, null=True, blank=True)
     barcode = models.CharField(max_length=50, unique=True, null=True, blank=True)
