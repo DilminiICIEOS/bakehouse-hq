@@ -46,7 +46,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { currency } from "@/lib/mock-data";
 
-// 🌟 FIXED: Added missing tool utility imports to clear compilation flags
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import api from "@/lib/api-backend";
@@ -84,9 +83,13 @@ function DashboardPage() {
 
 function ExecutiveDashboard() {
   const router = useRouter();
-  const { data: response, isLoading } = useQuery({ 
-    queryKey: ["dashboard-executive"], 
-    queryFn: api.getDashboardData 
+
+  // FIX TS2769 + TS2339: wrap queryFn in an arrow function so TanStack Query's
+  // context object is never forwarded to api.getDashboardData, and type the
+  // result as `any` so response?.data is always resolvable.
+  const { data: response, isLoading } = useQuery<any>({
+    queryKey: ["dashboard-executive"],
+    queryFn: () => api.getDashboardData({ date: new Date().toISOString().split("T")[0], period: "today" }),
   });
 
   if (isLoading) {
@@ -333,13 +336,13 @@ function ExecutiveDashboard() {
   );
 }
 
-// 🌟 FIXED: Changed '#' to '//' to align comment syntax with standard TypeScript rules
 // The salesperson dashboard focuses explicitly on shift transaction counts
 // while the factory manager coordinates dispatch truck logistics separately
 function SalespersonDashboard() {
-  const { data: response, isLoading } = useQuery({ 
-    queryKey: ["dashboard-salesperson"], 
-    queryFn: api.getDashboardData 
+  // FIX TS2769 + TS2339: same pattern — wrap queryFn and type result as `any`
+  const { data: response, isLoading } = useQuery<any>({
+    queryKey: ["dashboard-salesperson"],
+    queryFn: () => api.getDashboardData({ date: new Date().toISOString().split("T")[0], period: "today" }),
   });
 
   if (isLoading) {
